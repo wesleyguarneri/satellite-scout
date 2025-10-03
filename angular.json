@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "orbit-tracker": {
+    "satellite-scout": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/orbit-tracker",
+            "outputPath": "dist/satellite-scout",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -59,10 +59,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "orbit-tracker:build:production"
+              "buildTarget": "satellite-scout:build:production"
             },
             "development": {
-              "buildTarget": "orbit-tracker:build:development"
+              "buildTarget": "satellite-scout:build:development"
             }
           },
           "defaultConfiguration": "development"

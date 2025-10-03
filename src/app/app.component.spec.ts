@@ -14,16 +14,16 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'orbit-tracker' title`, () => {
+  it(`should have the 'satellite-scout' title`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('orbit-tracker');
+    expect(app.title).toEqual('satellite-scout');
   });
 
   it('should render title', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, orbit-tracker');
+    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, satellite-scout');
   });
 });
