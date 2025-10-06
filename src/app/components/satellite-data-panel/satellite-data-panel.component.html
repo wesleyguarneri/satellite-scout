@@ -1,12 +1,31 @@
-<p-panel [toggleable]="false" [collapsed]="true"
-  styleClass="absolute bottom-3 right-3 z-20 h-[75vh] w-[25rem] bg-gray-900 border border-white/20 shadow-lg flex flex-col overflow-auto text-white">
+<div class="absolute bottom-3 right-3 z-20 h-[75vh] w-[25rem] text-white flex flex-col panel-surface border border-white/20 rounded-xl shadow-lg overflow-hidden">
+  <div class="flex">
+    <button type="button"
+      class="flex-1 px-4 py-2 text-sm font-medium transition-colors"
+      [ngClass]="{
+        'bg-amber-500 text-black': activeTab === 'info',
+        'bg-transparent hover:bg-white/10': activeTab !== 'info'
+      }"
+      (click)="setActiveTab('info')">
+      Info
+    </button>
+    <a
+      class="flex-1 px-4 py-2 text-sm font-medium text-center transition-colors"
+      [ngClass]="{
+        'bg-amber-500 text-black': activeTab === 'charts',
+        'bg-transparent hover:bg-white/10': activeTab !== 'charts'
+      }"
+      (click)="setActiveTab('charts')">
+      Charts
+    </a>
+  </div>
 
-  <ng-template pTemplate="header">
+  <div class="px-4 py-3 border-t border-white/20">
     <h2 class="text-lg font-semibold">{{ tle?.name }}</h2>
-  </ng-template>
+  </div>
 
-  <ng-template pTemplate="content">
-    <p-accordion [value]="['info','orbit','tle','other']" [multiple]="true">
+  <div class="flex-1 overflow-auto p-4" *ngIf="activeTab === 'info'">
+    <p-accordion [value]="['info','location','orbit','tle','other']" [multiple]="true">
 
       <p-accordion-panel value="info">
         <p-accordion-header>Info</p-accordion-header>
@@ -26,6 +45,20 @@
         <p-accordion-header>Orbital Elements</p-accordion-header>
         <p-accordion-content>
           <p-table [value]="orbitData" [tableStyle]="{ 'min-width': '100%' }" class="text-white bg-gray-900">
+            <ng-template pTemplate="body" let-element>
+              <tr class="hover:bg-gray-800 text-sm">
+                <td class="text-amber-400">{{ element.name }}</td>
+                <td>{{ element.value }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-accordion-content>
+      </p-accordion-panel>
+
+      <p-accordion-panel value="location">
+        <p-accordion-header>Location</p-accordion-header>
+        <p-accordion-content>
+          <p-table [value]="locationData" [tableStyle]="{ 'min-width': '100%' }" class="text-white bg-gray-900">
             <ng-template pTemplate="body" let-element>
               <tr class="hover:bg-gray-800 text-sm">
                 <td class="text-amber-400">{{ element.name }}</td>
@@ -69,5 +102,9 @@
       </p-accordion-panel>
 
     </p-accordion>
-  </ng-template>
-</p-panel>
+  </div>
+
+  <div class="flex-1 flex items-center justify-center text-sm text-gray-300 px-4" *ngIf="activeTab === 'charts'">
+    Redirecting to charts view...
+  </div>
+</div>
