@@ -1,1 +1,77 @@
-<p>globe works!</p>
+<div class="globe-container relative w-full h-screen overflow-hidden bg-black" #container>
+  <canvas #canvas class="w-full h-full block"></canvas>
+</div>
+
+<p-panel *ngIf="showData" [toggleable]="false" [collapsed]="true"
+  styleClass="absolute bottom-3 right-3 z-20 h-[75vh] w-[25rem] bg-gray-900 border border-white/20 shadow-lg flex flex-col overflow-auto text-white">
+
+  <ng-template pTemplate="header">
+    <h2 class="text-lg font-semibold">{{ satelliteName }}</h2>
+  </ng-template>
+
+  <ng-template pTemplate="content">
+    <p-accordion [value]="['info','orbit','tle','other']" [multiple]="true">
+
+      <p-accordion-panel value="info">
+        <p-accordion-header>Info</p-accordion-header>
+        <p-accordion-content>
+          <p-table [value]="infoData" [tableStyle]="{ 'min-width': '100%' }" class="text-white bg-gray-900">
+            <ng-template pTemplate="body" let-element>
+              <tr class="hover:bg-gray-800 text-sm">
+                <td class="text-amber-400">{{ element.name }}</td>
+                <td>{{ element.value }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-accordion-content>
+      </p-accordion-panel>
+
+      <p-accordion-panel value="orbit">
+        <p-accordion-header>Orbital Elements</p-accordion-header>
+        <p-accordion-content>
+          <p-table [value]="orbitData" [tableStyle]="{ 'min-width': '100%' }" class="text-white bg-gray-900">
+            <ng-template pTemplate="body" let-element>
+              <tr class="hover:bg-gray-800 text-sm">
+                <td class="text-amber-400">{{ element.name }}</td>
+                <td>{{ element.value }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-accordion-content>
+      </p-accordion-panel>
+
+      <p-accordion-panel value="tle">
+        <p-accordion-header>TLE</p-accordion-header>
+        <p-accordion-content>
+          <p-table [value]="tleData" [tableStyle]="{ 'min-width': '100%' }" class="text-white bg-gray-900">
+            <ng-template pTemplate="body" let-element>
+              <tr class="hover:bg-gray-800 text-sm">
+                <td class="text-amber-400">{{ element.name }}</td>
+                <td *ngIf="element.name !== 'TLE'">{{ element.value }}</td>
+                <td *ngIf="element.name === 'TLE'">
+                  <textarea  rows="3" cols="75" pTextarea [(ngModel)]="element.value" [readonly]="true"
+                    pSize="small" style="resize: none" class="h-full overflow-x-auto text-xs"></textarea>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-accordion-content>
+      </p-accordion-panel>
+
+      <p-accordion-panel value="other">
+        <p-accordion-header>Other</p-accordion-header>
+        <p-accordion-content>
+          <p-table [value]="otherData" [tableStyle]="{ 'min-width': '100%' }" class="text-white bg-gray-900">
+            <ng-template pTemplate="body" let-element>
+              <tr class="hover:bg-gray-800">
+                <td class="text-amber-400">{{ element.name }}</td>
+                <td>{{ element.value }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-accordion-content>
+      </p-accordion-panel>
+
+    </p-accordion>
+  </ng-template>
+</p-panel>
