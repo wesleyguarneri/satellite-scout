@@ -4,17 +4,12 @@ import * as satellite from 'satellite.js'
 import { SatelliteService } from '../../services/satellite.service';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CommonModule } from '@angular/common';
-import { TabsModule } from 'primeng/tabs';
-import { TableModule } from 'primeng/table'
-import { AccordionModule } from 'primeng/accordion';
-import { NamedValue } from '../../models/named-value';
-import { TextareaModule } from 'primeng/textarea';
-import { FormsModule } from '@angular/forms';
-import { PanelModule } from 'primeng/panel';
+import { SatelliteDataPanelComponent } from '../satellite-data-panel/satellite-data-panel.component';
+import { TleDetails } from '../../models/tle-details';
 
 @Component({
   selector: 'app-globe',
-  imports: [CommonModule, TabsModule, TableModule, AccordionModule, TextareaModule, FormsModule, PanelModule],
+  imports: [CommonModule, SatelliteDataPanelComponent],
   standalone: true,
   templateUrl: './globe.component.html',
   styleUrl: './globe.component.css'
@@ -36,19 +31,6 @@ export class GlobeComponent {
   startTime = Date.now();
   autoRotate = true;
   showData = false;
-  activeTabValue: string = "";
-  displayedColumns: string[] = ["name", "value"];
-  infoData: NamedValue[] = [
-    { name: 'latitude', value: '24.58136' },
-    { name: 'longitude', value: '-126.20389' },
-    { name: 'internalTemperature', value: '20C' },
-    { name: 'accelerometer', value: 'x 30, y 20, z 30' },
-    { name: 'barometricPressure', value: '0' }
-  ];
-  tleData: NamedValue[] = [];
-  orbitData: NamedValue[] = [];
-  otherData: NamedValue[] = [{ name: 'example', value: 'Other data goes here' }];
-  dataSource = this.infoData;
 
   // scale: 1 unit = earth radius (6371 km)
   KM_TO_UNITS = 1 / 6371;
@@ -56,19 +38,23 @@ export class GlobeComponent {
   // orbit samples (seconds)
   orbitSamples: THREE.Vector3[] = [];
   satrec: any;
-  satelliteName: string = "";
+  tle: TleDetails = {
+    name: '',
+    line1: '',
+    line2: ''
+  };
 
   private ngZone = inject(NgZone);
   private satService = inject(SatelliteService);
 
   ngOnInit() {
-    const [name,l1, l2] = this.satService.getExampleTLE()
+    const [name, l1, l2] = this.satService.getExampleTLE()
     this.satrec = this.satService.tleToSatrec(l1, l2)
-    this.satelliteName = name
-
-    // Expanded data from satrec
-    this.orbitData = this.orbitData.concat(this.buildOrbitDataFromSatrec(this.satrec))
-    this.tleData = this.tleData.concat(this.buildTleDataFromSatrec(this.satrec, [name, l1, l2]))
+    this.tle = {
+      name,
+      line1: l1,
+      line2: l2
+    }
   }
 
   async ngAfterViewInit() {
@@ -262,24 +248,4 @@ createSatelliteMarker() {
     }
   }
 
-  buildOrbitDataFromSatrec(satrec: any) {
-    return [
-      { name: 'Satellite Number', value: satrec.satnum },
-      { name: 'Inclination (deg)', value: satrec.inclo * (180 / Math.PI) },
-      { name: 'RAAN (deg)', value: satrec.nodeo * (180 / Math.PI) },
-      { name: 'Eccentricity', value: satrec.ecco },
-      { name: 'Argument of Perigee (deg)', value: satrec.argpo * (180 / Math.PI) },
-      { name: 'Mean Anomaly (deg)', value: satrec.mo * (180 / Math.PI) },
-      { name: 'Mean Motion (rev/day)', value: satrec.no_kozai * (1440 / (2 * Math.PI)) },
-      { name: 'BSTAR Drag Term', value: satrec.bstar }
-    ]
-  }
-
-  buildTleDataFromSatrec(satrec: any, tle: string[]) {
-    const tleString = tle.toString().replace(/,/g,'\n')
-    return [
-      { name: 'Epoch', value: satrec.epochdays },
-      { name: 'TLE', value: tleString},
-    ]
-  }
 }
