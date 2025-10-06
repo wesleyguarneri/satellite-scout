@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { Component, ElementRef, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild } from '@angular/core';
 import { AccordionModule } from 'primeng/accordion';
 import { TableModule } from 'primeng/table';
 import { TextareaModule } from 'primeng/textarea';
@@ -8,6 +8,15 @@ import { NamedValue } from '../../models/named-value';
 import { TleDetails } from '../../models/tle-details';
 import * as satellite from 'satellite.js';
 import type { PositionAndVelocity, EciVec3 } from 'satellite.js';
+import {
+  Chart,
+  ChartConfiguration,
+  ChartOptions,
+  TooltipItem,
+  registerables
+} from 'chart.js';
+
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-satellite-data-panel',
@@ -33,23 +42,35 @@ export class SatelliteDataPanelComponent implements OnChanges, OnDestroy {
   locationData: NamedValue[] = [];
   otherData: NamedValue[] = [{ name: 'example', value: 'Other data goes here' }];
   private locationIntervalId: ReturnType<typeof setInterval> | null = null;
+  @ViewChild('velocityChart') velocityChartRef?: ElementRef<HTMLCanvasElement>;
+  private velocityChart: Chart<'line'> | null = null;
+  private velocityLabels: string[] = [];
+  private velocityValues: (number | null)[] = [];
 
   ngOnChanges(_changes: SimpleChanges): void {
     if (this.satrec && this.tle) {
       this.tleData = this.buildTleDataFromSatrec(this.satrec, [this.tle.name, this.tle.line1, this.tle.line2]);
       this.refreshDynamicData();
       this.ensureLocationInterval();
+      if (this.activeTab === 'charts') {
+        this.scheduleChartRender();
+      }
     } else {
       this.clearLocationInterval();
+      this.resetVelocityVisuals();
     }
   }
 
   ngOnDestroy(): void {
     this.clearLocationInterval();
+    this.destroyVelocityChart();
   }
 
   setActiveTab(tab: 'info' | 'charts') {
     this.activeTab = tab;
+    if (tab === 'charts') {
+      this.scheduleChartRender();
+    }
   }
 
   private refreshDynamicData(): void {
@@ -62,6 +83,7 @@ export class SatelliteDataPanelComponent implements OnChanges, OnDestroy {
 
     this.orbitData = this.buildOrbitDataFromSatrec(this.satrec, velocity);
     this.locationData = this.buildLocationData(position, now);
+    this.updateVelocitySeries(now);
   }
 
   private ensureLocationInterval(): void {
@@ -73,6 +95,147 @@ export class SatelliteDataPanelComponent implements OnChanges, OnDestroy {
     if (!this.locationIntervalId) return;
     clearInterval(this.locationIntervalId);
     this.locationIntervalId = null;
+  }
+
+  private scheduleChartRender(): void {
+    if (!this.velocityLabels.length) {
+      this.updateVelocitySeries(new Date());
+    }
+    setTimeout(() => {
+      if (!this.velocityChart && this.velocityChartRef) {
+        this.renderVelocityChart();
+      } else if (this.velocityChart) {
+        this.velocityChart.update();
+      }
+    }, 0);
+  }
+
+  private renderVelocityChart(): void {
+    if (!this.velocityChartRef) return;
+    const context = this.velocityChartRef.nativeElement.getContext('2d');
+    if (!context) return;
+
+    this.destroyVelocityChart();
+
+    const config: ChartConfiguration<'line'> = {
+      type: 'line',
+      data: {
+        labels: this.velocityLabels,
+        datasets: [
+          {
+            label: 'Velocity (km/h)',
+            data: this.velocityValues,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+            tension: 0.3,
+            fill: true,
+            pointRadius: 2
+          }
+        ]
+      },
+      options: this.getChartOptions()
+    };
+
+    this.velocityChart = new Chart(context, config);
+  }
+
+  private getChartOptions(): ChartOptions<'line'> {
+    const options: ChartOptions<'line'> = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: '#f8fafc'
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx: TooltipItem<'line'>) => {
+              const value = ctx.parsed.y;
+              return Number.isFinite(value) ? ` ${value.toFixed(2)} km/h` : ' N/A';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#cbd5f5' },
+          grid: { color: 'rgba(148, 163, 184, 0.1)' }
+        },
+        y: {
+          ticks: { color: '#cbd5f5' },
+          grid: { color: 'rgba(148, 163, 184, 0.1)' },
+          title: {
+            display: true,
+            text: 'Velocity (km/h)',
+            color: '#f8fafc'
+          }
+        }
+      }
+    };
+    return options;
+  }
+
+  private updateVelocitySeries(referenceTime: Date): void {
+    if (!this.satrec) {
+      this.velocityLabels = [];
+      this.velocityValues = [];
+      if (this.velocityChart) {
+        this.velocityChart.data.labels = [];
+        this.velocityChart.data.datasets[0].data = [];
+        this.velocityChart.update();
+      }
+      return;
+    }
+
+    const labels: string[] = [];
+    const values: (number | null)[] = [];
+    const samples = 25;
+    const hourMillis = 60 * 60 * 1000;
+
+    for (let i = 0; i < samples; i++) {
+      const sampleTime = new Date(referenceTime.getTime() + i * hourMillis);
+      const propagated = satellite.propagate(this.satrec, sampleTime);
+      const velocityVector = propagated?.velocity;
+      labels.push(`${i}h`);
+      if (velocityVector) {
+        const kmPerHour = this.getVelocityMagnitude(velocityVector) * 3600;
+        values.push(Number(kmPerHour.toFixed(2)));
+      } else {
+        values.push(null);
+      }
+    }
+
+    this.velocityLabels = labels;
+    this.velocityValues = values;
+
+    if (this.velocityChart) {
+      this.velocityChart.data.labels = labels;
+      this.velocityChart.data.datasets[0].data = values;
+      this.velocityChart.update();
+    }
+  }
+
+  private getVelocityMagnitude(velocityVector: PositionAndVelocity['velocity']): number {
+    return Math.sqrt(
+      velocityVector.x ** 2 +
+      velocityVector.y ** 2 +
+      velocityVector.z ** 2
+    );
+  }
+
+  private destroyVelocityChart(): void {
+    if (this.velocityChart) {
+      this.velocityChart.destroy();
+      this.velocityChart = null;
+    }
+  }
+
+  private resetVelocityVisuals(): void {
+    this.velocityLabels = [];
+    this.velocityValues = [];
+    this.destroyVelocityChart();
   }
 
   private buildOrbitDataFromSatrec(satrec: any, velocityVector?: PositionAndVelocity['velocity']): NamedValue[] {
