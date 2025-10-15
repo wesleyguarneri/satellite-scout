@@ -188,16 +188,13 @@ createSatelliteMarker() {
   }
 
   startAnimationLoop() {
-    // run animation outside Angular to avoid change detection overhead
-    this.ngZone.runOutsideAngular(() => {
+    this.ngZone.runOutsideAngular(() => {  // run animation outside Angular to avoid change detection overhead
       const animate = () => {
-        // rotate earth slowly if autoRotate
         if (this.autoRotate) this.earth.rotation.y += 0.0001
 
-        // time for satellite: use real time or accelerated time
         const elapsed = (Date.now() - this.startTime) / 1000
-        // speed factor to make satellite move faster for demo
-        const speedFactor = 10 // 10x real time
+
+        const speedFactor = 10 
         const t = new Date(Date.now() + elapsed * 1000 * (speedFactor - 1))
         this.updateSatellitePosition(t)
 
