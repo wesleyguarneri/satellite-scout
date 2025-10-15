@@ -188,7 +188,7 @@ createSatelliteMarker() {
   }
 
   startAnimationLoop() {
-    this.ngZone.runOutsideAngular(() => {  // run animation outside Angular to avoid change detection overhead
+    this.ngZone.runOutsideAngular(() => {  
       const animate = () => {
         if (this.autoRotate) this.earth.rotation.y += 0.0001
 
