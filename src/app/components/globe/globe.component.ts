@@ -140,16 +140,7 @@ createSatelliteMarker() {
   this.scene.add(this.satelliteMesh)
 }
 
-  /**
-   * Sample the orbit for a window of time (here ±45 minutes) and create a line
-   * We propagate the satellite at multiple times and place points.
-   *
-   * IMPORTANT NOTE: satellite.js propagate returns TEME (inertial) coordinates.
-   * Drawing the full orbit in a rotating Earth frame requires converting to
-   * ECF, or drawing in ECI and rotating Earth accordingly. For simplicity here
-   * we convert to ECF (earth-fixed) using satellite.eciToEcf at each sample time.
-   *
-   */
+
   sampleOrbit(start: Date) {
     const samples = 200
     const windowSeconds = 90 * 60 // 90 minutes
